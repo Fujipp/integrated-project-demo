@@ -1,0 +1,209 @@
+<script setup>
+import { demoFetch as fetch } from "@/demo/api.js";
+
+import { ref, onMounted, computed } from "vue"
+import { useUserStore } from "@/stores/AuthUserStore"
+import { useRouter } from "vue-router"
+
+const userStore = useUserStore()
+const router = useRouter()
+const baseUrl = "/demo-api";
+
+const fullname = computed(() => userStore.fullname)
+
+const dropdownOpen = ref(false)
+
+const toggleDropdown = () => {
+  dropdownOpen.value = !dropdownOpen.value
+}
+
+onMounted(async () => {
+  // ตรวจสอบว่า route ปัจจุบันเป็น public หรือ private
+  const route = router.currentRoute.value
+  const boardId = route.params.boardId
+
+  if (!userStore.token && boardId) {
+    try {
+      const boardData = await fetch(`${baseUrl}/v3/boards/${boardId}`, {
+        headers: { "Content-Type": "application/json" },
+      }).then((res) => res.json())
+
+      // ถ้าบอร์ดเป็น private และไม่มี token ให้ redirect ไป /login
+      if (boardData.visibility === "PRIVATE") {
+        console.warn("This board is private. Redirecting to login.")
+        return router.push("/login")
+      }
+    } catch (error) {
+      console.error("Error fetching board data:", error)
+    }
+  } else if (!userStore.token) {
+    // ถ้าไม่มี token แต่ไม่เกี่ยวกับบอร์ดให้ไป login
+    router.push("/login")
+  } else {
+    userStore.initializeStore()
+  }
+})
+
+const home = () => {
+  router.push("/board")
+}
+
+const logout = () => {
+  userStore.logout()
+  router.push("/login")
+  dropdownOpen.value = false
+}
+
+const signIn = () => {
+  console.log("Sign In as Guest")
+  router.push("/login")
+}
+</script>
+
+<template>
+  <div class="navbar bg-base-100 bg-opacity-50 shadow-md">
+    <div class="itbkk-home flex-1 ml-2">
+      <a
+        @click="home"
+        class="btn btn-ghost normal-case text-xl flex items-center"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6 mr-2"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 9l9-7 9 7v11a1 1 0 01-1 1H4a1 1 0 01-1-1z"
+          />
+        </svg>
+        ITBKK
+      </a>
+    </div>
+    <div class="itbkk-fullname flex-none mr-2 dropdown dropdown-end">
+      <a
+        href="#"
+        class="btn btn-ghost normal-case text-xl flex items-center"
+        @click="toggleDropdown"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-10 w-10 rounded-full mr-2"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M12 12c2.485 0 4.5-2.015 4.5-4.5S14.485 3 12 3 7.5 5.015 7.5 7.5 9.515 12 12 12zM3 18c0-3.315 2.685-6 6-6h6c3.315 0 6 2.685 6 6v1.5a.5.5 0 01-.5.5h-17a.5.5 0 01-.5-.5V18z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        <div tabindex="0" role="button">
+          <p v-if="fullname" class="text-sm font-semibold">{{ fullname }}</p>
+        </div>
+      </a>
+      <!-- ใช้ v-if เพื่อควบคุมการแสดงผลของ dropdown -->
+      <ul
+        v-if="dropdownOpen"
+        class="dropdown-content menu bg-white text-[#343365] rounded-box z-[1] w-36 p-2 mt-2 shadow"
+      >
+        <li v-if="userStore.token">
+          <a
+            @mousedown="logout"
+            class="itbkk-sign-out flex items-center space-x-2 group"
+          >
+            <!-- ใช้ @mousedown -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              class="hover-red-icon transition-colors duration-300 group-hover:scale-110"
+            >
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2.5"
+                d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14l5-5l-5-5m5 5H9"
+              />
+            </svg>
+            <span class="transition-colors duration-300">Sign Out</span>
+          </a>
+        </li>
+        <li v-else>
+          <a
+            @mousedown="signIn"
+            class="itbkk-sign-in flex items-center space-x-2 group"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              class="hover-green-icon transition-colors duration-300 group-hover:scale-110"
+            >
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2.5"
+                d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4m-5-4l5-5l-5-5m5 5H3"
+              />
+            </svg>
+            <span class="transition-colors duration-300">Sign In</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.navbar {
+  position: fixed; /* ทำให้ navbar ติดอยู่บนสุดของหน้าจอ */
+  top: 0; /* ให้ชิดด้านบน */
+  left: 0;
+  right: 0;
+  z-index: 99999;
+}
+
+.hover-red-icon .hover-green-icon {
+  stroke: currentColor;
+  transition: stroke 0.3s ease;
+}
+
+.group:hover .hover-red-icon {
+  color: #ef4444; /* red-500 */
+}
+
+.group:hover .hover-green-icon {
+  color: #22c55e; /* green-500 */
+}
+
+.group:hover .hover-red-icon ~ span {
+  color: #ef4444; /* red-500 */
+}
+
+.group:hover .hover-green-icon ~ span {
+  color: #22c55e; /* green-500 */
+}
+
+a {
+  color: black;
+  transition: color 0.3s ease;
+}
+
+.itbkk-fullname,
+.itbkk-home,
+.itbkk-sign-out,
+.itbkk-sign-in {
+  user-select: none;
+}
+</style>

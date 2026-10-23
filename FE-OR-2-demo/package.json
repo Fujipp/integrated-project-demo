@@ -1,0 +1,40 @@
+{
+  "name": "fe-or-2-demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test:e2e": "start-server-and-test preview http://localhost:5173 'cypress run --e2e'",
+    "test:e2e:dev": "start-server-and-test 'vite dev --port 5173' http://localhost:5173 'cypress open --e2e'",
+    "test:unit": "cypress run --component",
+    "test:unit:dev": "cypress open --component",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:run:vm": "cypress run --config baseUrl=https://intproj23.sit.kmutt.ac.th/or2",
+    "test:demo": "node --test tests/demo-api.test.js"
+  },
+  "dependencies": {
+    "jwt-decode": "^4.0.0",
+    "pinia": "^2.3.0",
+    "vue": "^3.5.13",
+    "vue-jwt-decode": "^0.1.0",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "autoprefixer": "^10.4.20",
+    "cypress": "^13.16.1",
+    "daisyui": "^4.12.20",
+    "postcss": "^8.4.49",
+    "start-server-and-test": "^2.0.9",
+    "tailwindcss": "^3.4.16",
+    "vite": "^6.0.3"
+  },
+  "description": "This template should help get you started developing with Vue 3 in Vite.",
+  "main": "cypress.config.js",
+  "author": "",
+  "license": "ISC"
+}
